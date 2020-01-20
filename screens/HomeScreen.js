@@ -1,21 +1,17 @@
 import * as WebBrowser from "expo-web-browser";
 import db from "../db";
+import * as firebase from "firebase/app";
+import "firebase/auth";
 import React, { useState, useEffect } from "react";
 import {
-  Image,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
   Button,
-  TextInput,
-  Picker
+  TextInput
 } from "react-native";
-import { COLOR, ThemeContext, getTheme } from "react-native-material-ui";
-
-import { MonoText } from "../components/StyledText";
 
 export default function HomeScreen() {
   const [messages, setMessages] = useState([]);
@@ -34,8 +30,13 @@ export default function HomeScreen() {
       setMessages([...masseges]);
     });
   }, []);
+
+  useEffect(() => {
+    console.log("auth", firebase.auth());
+    setFrom(firebase.auth().currentUser.uid);
+  }, []);
+
   const handleEdit = item => {
-    setFrom(item.from);
     setTo(item.to);
     setInput(item.message);
     setId(item.id);
@@ -48,10 +49,8 @@ export default function HomeScreen() {
     } else {
       db.collection("messages").add({ from, to, message: input });
     }
-    setFrom("");
     setTo("");
     setInput("");
-    setId("");
   };
   const handleDelete = message => {
     db.collection("messages")
@@ -72,7 +71,7 @@ export default function HomeScreen() {
       </View>
       <ScrollView style={{ flex: 2, marginTop: 75 }}>
         {messages.map((item, i) => (
-          <View>
+          <View key={i}>
             <Text
               key={i}
               style={{ backgroundColor: "lightgray" }}
@@ -86,11 +85,6 @@ export default function HomeScreen() {
         ))}
       </ScrollView>
       <View style={{}}>
-        <TextInput
-          style={{ height: 40, borderColor: "gray", borderWidth: 1 }}
-          onChangeText={text => setFrom(text)}
-          value={from}
-        />
         <TextInput
           style={{ height: 40, borderColor: "gray", borderWidth: 1 }}
           onChangeText={text => setTo(text)}
