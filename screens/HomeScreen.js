@@ -2,6 +2,7 @@ import * as WebBrowser from "expo-web-browser";
 import db from "../db";
 import * as firebase from "firebase/app";
 import "firebase/auth";
+import Message from "./Messages";
 import React, { useState, useEffect } from "react";
 import {
   Platform,
@@ -26,21 +27,19 @@ export default function HomeScreen() {
       querySnapshot.forEach(doc => {
         masseges.push({ id: doc.id, ...doc.data() });
       });
-      console.log("Current masseges in DB: ", masseges.join(", "));
+      //console.log("Current masseges in DB: ", masseges.join(", "));
       setMessages([...masseges]);
     });
   }, []);
 
   useEffect(() => {
-    console.log("auth", firebase.auth());
+    //console.log("auth", firebase.auth());
     setFrom(firebase.auth().currentUser.uid);
   }, []);
-
-  const handleEdit = item => {
-    setTo(item.to);
-    setInput(item.message);
-    setId(item.id);
+  const handleSignOut = () => {
+    firebase.auth().signOut();
   };
+
   const handleSend = () => {
     if (id) {
       db.collection("messages")
@@ -52,10 +51,10 @@ export default function HomeScreen() {
     setTo("");
     setInput("");
   };
-  const handleDelete = message => {
-    db.collection("messages")
-      .doc(message.id)
-      .delete();
+  const handleEdit = item => {
+    setTo(message.to);
+    setInput(message.message);
+    setId(message.id);
   };
   const handleNew = message => {
     db.collection("messages").add({
@@ -70,18 +69,8 @@ export default function HomeScreen() {
         <Button title="Add a Message" onPress={() => handleNew()} />
       </View>
       <ScrollView style={{ flex: 2, marginTop: 75 }}>
-        {messages.map((item, i) => (
-          <View key={i}>
-            <Text
-              key={i}
-              style={{ backgroundColor: "lightgray" }}
-              numberOfLines={2}
-            >
-              from {item.from} to {item.to} :{item.message}
-            </Text>
-            <Button title="X" onPress={() => handleDelete(item)} />
-            <Button title="U" onPress={() => handleEdit(item)} />
-          </View>
+        {messages.map((messages, i) => (
+          <Message key={i} message={messages} handleEdit={handleEdit} />
         ))}
       </ScrollView>
       <View style={{}}>
@@ -95,15 +84,18 @@ export default function HomeScreen() {
           onChangeText={text => setInput(text)}
           value={input}
         />
-
-        <Button title="send" onPress={() => handleSend()} />
+        <View style={{ flexDirection: "row", justifyContent: "space-evenly" }}>
+          <Button title="Send" onPress={() => handleSend()} />
+          <Button title="Sign Out" onPress={() => handleSignOut()} />
+        </View>
       </View>
     </View>
   );
 }
 
 HomeScreen.navigationOptions = {
-  header: null
+  header: null,
+  title: "Home"
 };
 
 function DevelopmentModeNotice() {

@@ -4,6 +4,7 @@ import * as Font from "expo-font";
 import React, { useState, useEffect } from "react";
 import * as firebase from "firebase/app";
 import "firebase/auth";
+import db from "./db";
 import {
   Platform,
   StatusBar,
@@ -26,8 +27,11 @@ export default function App(props) {
     return firebase.auth().onAuthStateChanged(setUser);
   }, []);
 
-  const handleRegister = () => {
-    firebase.auth().createUserWithEmailAndPassword(email, password);
+  const handleRegister = async () => {
+    await firebase.auth().createUserWithEmailAndPassword(email, password);
+    db.collection("users").doc(
+      firebase.auth().currentUser.uid.update({ display: "", photoURL: "" })
+    );
   };
   const handleLogin = () => {
     firebase.auth().signInWithEmailAndPassword(email, password);
