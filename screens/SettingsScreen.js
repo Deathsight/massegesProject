@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { ExpoConfigView } from "@expo/samples";
-import { StyleSheet, View, Text, TextInput, Button } from "react-native";
+import { StyleSheet, View, Text, TextInput, Button, Image } from "react-native";
+import * as ImagePicker from "expo-image-picker";
+import db from "../db";
 import * as firebase from "firebase/app";
 import "firebase/auth";
 export default function SettingsScreen() {
+  const [hasCameraRollPermission, setHasCameraRollPermission] = useState(false);
   /**
    * Go ahead and delete ExpoConfigView and replace it with your content;
    * we just wanted to give you a quick view of your config.
@@ -11,28 +14,39 @@ export default function SettingsScreen() {
   const [displayName, setDisplayName] = useState();
   const [photoURL, setPhotoURL] = useState();
 
+  const askPermission = async () => {
+    const { status } = await ImagePicker.requestCameraRollPermissionsAsync();
+    setHasCameraRollPermission(status === "granted");
+  };
+
   const handleSet = async () => {
     const info = await db
       .collection("users")
       .doc(firebase.auth().currentUser.uid)
       .get();
-    setDisplayName(info.displayName);
-    setPhotoURL(info.photoURL);
+    setDisplayName(info.data().displayName);
+    setPhotoURL(info.data().photoURL);
   };
   useEffect(() => {
-    //setDisplayName(firebase.auth().currentUser.displayName);
-    //setPhotoURL(firebase.auth().currentUser.photoURL);
     handleSet();
   }, []);
 
   const handleSave = () => {
     //firebase.auth().currentUser.updateProfile({displayName,photoURL});
-    db.collection("users").doc(
-      firebase.auth().currentUser.update({
+    db.collection("users")
+      .doc(firebase.auth().currentUser.uid)
+      .set({
         displayName,
         photoURL
-      })
-    );
+      });
+
+    handleSet();
+  };
+  const handlePickImage = () => {
+    // show camera roll and pick an image to upload.
+    // use firebase storage for uploading images.
+    // set the the name of images to the use uid to clearify the uniques of each image
+    // get the url and set it as the porfile avatar (photURL).
   };
 
   return (
@@ -45,12 +59,14 @@ export default function SettingsScreen() {
         onChangeText={text => setDisplayName(text)}
         value={displayName}
       />
+      <Image source={{ uri: photoURL }} style={{ width: 184, height: 184 }} />
       <TextInput
         style={{ height: 40, borderColor: "gray", borderWidth: 1 }}
         placeholder="Photo URL"
         onChangeText={text => setPhotoURL(text)}
         value={photoURL}
       />
+      <Button title="Upload Image" onPress={handlePickImage} />
       <Button title="Save" onPress={() => handleSave()} />
     </View>
   );

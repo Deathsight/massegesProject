@@ -28,10 +28,19 @@ export default function App(props) {
   }, []);
 
   const handleRegister = async () => {
+    console.log("before");
     await firebase.auth().createUserWithEmailAndPassword(email, password);
     db.collection("users").doc(
       firebase.auth().currentUser.uid.update({ display: "", photoURL: "" })
     );
+    await db
+      .collection("users")
+      .doc(firebase.auth().currentUser.uid)
+      .add({
+        display: email,
+        photoURL: "https://s3.amazonaws.com/37assets/svn/1065-IMG_2529.jpg"
+      });
+    console.log("after");
   };
   const handleLogin = () => {
     firebase.auth().signInWithEmailAndPassword(email, password);

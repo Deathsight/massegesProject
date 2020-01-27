@@ -1,38 +1,50 @@
 import React, { useState, useEffect } from "react";
-import { Text, Button, StyleSheet, View } from "react-native";
+import { Text, Button, StyleSheet, View, Image } from "react-native";
 
 import * as firebase from "firebase/app";
 import "firebase/auth";
 import "firebase/database";
 import db from "../db";
 import { recoveredProps } from "expo-error-recovery";
+import { from } from "rxjs/observable/from";
 
 export default ({ message, hamdleEdit }) => {
   useEffect(() => {
-    handleSet();
+    handleUser();
   }, []);
+  const [user, setUser] = useState(null);
 
-  const handleSet = async () => {
-    const info = await db
+  const handleUser = async () => {
+    const snap = await db
       .collection("users")
       .doc(firebase.auth().currentUser.uid)
-      .get(snapShot => {
-        console.log(snapShot.data());
-      });
+      .get();
+    console.log("PhotoURL", snap.data());
+    setUser(snap.data());
   };
+
   const handleDelete = message => {
     db.collection("messages")
       .doc(message.id)
       .delete();
   };
+
   return (
-    <View>
-      <Text style={{ backgroundColor: "lightgray" }} numberOfLines={2}>
-        from {message.from} to {message.to} :{message.message}
-      </Text>
-      <Button title="X" onPress={() => handleDelete(message)} />
-      <Button title="U" onPress={() => handleEdit(message)} />
-    </View>
+    user && (
+      <>
+        <Image
+          style={{ width: 50, height: 50 }}
+          source={{ uri: user.photoURL }}
+        />
+        <View>
+          <Text style={{ backgroundColor: "lightgray" }} numberOfLines={2}>
+            from {user.displayName} to {message.to} :{message.message}
+          </Text>
+          <Button title="X" onPress={() => handleDelete(message)} />
+          <Button title="U" onPress={() => handleEdit(message)} />
+        </View>
+      </>
+    )
   );
 };
 const styles = StyleSheet.create({
