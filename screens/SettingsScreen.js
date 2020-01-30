@@ -5,6 +5,7 @@ import * as ImagePicker from "expo-image-picker";
 import db from "../db";
 import * as firebase from "firebase/app";
 import "firebase/auth";
+import "firebase/storage";
 export default function SettingsScreen() {
   const [hasCameraRollPermission, setHasCameraRollPermission] = useState(false);
   /**
@@ -13,6 +14,7 @@ export default function SettingsScreen() {
    */
   const [displayName, setDisplayName] = useState();
   const [photoURL, setPhotoURL] = useState();
+  const [localImage, setLocalImage] = useState("");
 
   const askPermission = async () => {
     const { status } = await ImagePicker.requestCameraRollPermissionsAsync();
@@ -31,7 +33,7 @@ export default function SettingsScreen() {
     handleSet();
   }, []);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     //firebase.auth().currentUser.updateProfile({displayName,photoURL});
     db.collection("users")
       .doc(firebase.auth().currentUser.uid)
@@ -40,31 +42,52 @@ export default function SettingsScreen() {
         photoURL
       });
 
+    if (photoURL != "") {
+      const response = await fetch(localImage);
+      const blob = await response.blob();
+
+      firebase
+        .storage()
+        .ref()
+        .child(firebase.auth().currentUser.uid)
+        .put(blob);
+      const url = await firebase
+        .storage()
+        .ref()
+        .child(firebase.auth().currentUser.uid)
+        .getDownloadURL();
+      setPhotoURL(url);
+    }
+
+    // get the url and set it as the porfile avatar (photURL).
+
     handleSet();
   };
-  const handlePickImage = () => {
+  const handlePickImage = async () => {
     // show camera roll and pick an image to upload.
-    // use firebase storage for uploading images.
-    // set the the name of images to the use uid to clearify the uniques of each image
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: true,
+      aspect: [4, 3],
+      quality: 1
+    });
+    console.log(result);
+
+    setLocalImage(result.uri);
     // get the url and set it as the porfile avatar (photURL).
   };
 
   return (
     <View style={styles.container}>
+      {photoURL != "" && (
+        <Image source={{ uri: photoURL }} style={{ width: 184, height: 184 }} />
+      )}
       <Text>Display Name</Text>
-
       <TextInput
         style={{ height: 40, borderColor: "gray", borderWidth: 1 }}
         placeholder="Dispaly Name"
         onChangeText={text => setDisplayName(text)}
         value={displayName}
-      />
-      <Image source={{ uri: photoURL }} style={{ width: 184, height: 184 }} />
-      <TextInput
-        style={{ height: 40, borderColor: "gray", borderWidth: 1 }}
-        placeholder="Photo URL"
-        onChangeText={text => setPhotoURL(text)}
-        value={photoURL}
       />
       <Button title="Upload Image" onPress={handlePickImage} />
       <Button title="Save" onPress={() => handleSave()} />

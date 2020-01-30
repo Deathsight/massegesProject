@@ -17,10 +17,17 @@ export default ({ message, hamdleEdit }) => {
   const handleUser = async () => {
     const snap = await db
       .collection("users")
-      .doc(firebase.auth().currentUser.uid)
-      .get();
-    console.log("PhotoURL", snap.data());
-    setUser(snap.data());
+      .doc(user.from)
+      .onSnapshot(querySnapshot => {
+        console.log("User Snapshot: ", querySnapshot.data());
+        setUser(querySnapshot.data());
+        // const masseges = [];
+        // querySnapshot.forEach(doc => {
+        //   masseges.push({ id: doc.id, ...doc.data() });
+        // });
+        // //console.log("Current masseges in DB: ", masseges.join(", "));
+        // setMessages([...masseges]);
+      });
   };
 
   const handleDelete = message => {
